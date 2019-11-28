@@ -5,9 +5,9 @@ VTT 3rd year
 This repository contains codes and pre-trained checkpoints of a place recognition model and scene change detector for Friend video.
 
 # Requirements
- - Ubuntu 16.04
+ - Ubuntu(Tested on v16.04)
  - Python 2.7
- - Pytorch 1.2.0
+ - Pytorch(Tested on v1.2.0)
  - NumPy
  - PIL
  - opencv-python

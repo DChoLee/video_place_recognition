@@ -114,7 +114,7 @@ def main():
                     check = 0
                     data = transform(images).unsqueeze(0).pin_memory().cuda(non_blocking=True)
                     output = model(data) #data : B*T*C*H*W // B : 1 // T : 10 frames.
-                    y_friends = F.softmax(output, 0)
+                    y_friends = F.softmax(output, 1)
                     top5_value_friends, top5_index_friends = y_friends.topk(5)
                     top5_value_friends, top5_label_friends = top5_value_friends.tolist(), [class_friends[i] for i in top5_index_friends[:, 0]]
                     for i in range(len(images)):

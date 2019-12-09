@@ -32,44 +32,67 @@ print(len(class_friends))
 class clsf(torch.nn.Module):
     def __init__(self):
         super(clsf, self).__init__()
+        #self.lstm_cls = torch.nn.LSTM(input_size=2048, hidden_size=1024, num_layers=2, batch_first=True)
         self.lstm_sc = torch.nn.LSTM(input_size=2048, hidden_size=1024, num_layers=2, batch_first=True)
-        self.fc2 = torch.nn.Conv1d(in_channels=1024, out_channels=512, kernel_size=1)
-        self.fc2_1 = torch.nn.Conv1d(in_channels=512, out_channels=128, kernel_size=1)
-        self.fc2_2 = torch.nn.Conv1d(in_channels=128, out_channels=1, kernel_size=1)#torch.nn.Linear(1024, 1)
+        #self.fc1 = torch.nn.Linear(2048, 1024)
+        #self.fc_sctocls = torch.nn.Linear(1152, 128)
+        #self.fc_sc = torch.nn.Linear(1152, 1)
+        #self.fc_cls = torch.nn.Linear(1152, 25)
+        self.fc2 = torch.nn.Linear(1024, 1)
         self.fc3 = torch.nn.Linear(1024, 25)
+        #self.fc_temp = torch.nn.Linear(2048, 32)
+        #self.fc_temp2 = torch.nn.Linear(320, 10)
         self.softmax = torch.nn.Softmax(dim=1)
 
     def forward(self, x):
+        #self.lstm_cls.flatten_parameters()
         self.lstm_sc.flatten_parameters()
         N, T = x.size(0), x.size(1)
         x = self.lstm_sc(x)[0]
         
-        # Scene change
-        change = self.fc2(x.transpose(1,2))
-        change = self.fc2_1(change)
-        change = self.fc2_2(change)
-        change = torch.squeeze(change,1)
+        change = x.reshape(N*T, -1)
+        #x = self.fc1(x)
+        change = self.fc2(change)
+        change = change.reshape(N, T)
+        #x = x.reshape(N*T, -1)
         
-       	M, _ = change.max(1)
-      	w = change - M.view(-1,1)
-      	w = w.exp()
-      	w = w.unsqueeze(1).expand(-1,w.size(1),-1)
-      	w = w.triu(1) - w.tril()
-      	w = w.cumsum(2)
-      	w = w - w.diagonal(dim1=1,dim2=2).unsqueeze(2)
-      	ww = w.new_empty(w.size())
-      	idx = M>=0
-      	ww[idx] = w[idx] + M[idx].neg().exp().view(-1,1,1)
-      	idx = ~idx
-      	ww[idx] = M[idx].exp().view(-1,1,1)*w[idx] + 1
-      	ww = (ww+1e-10).pow(-1)
-      	ww = ww/ww.sum(1,True)
-      	x = ww.transpose(1,2).bmm(x)
-
-        
+        M, _ = change.max(1)
+        w = change - M.view(-1,1)
+        w = w.exp()
+        w = w.unsqueeze(1).expand(-1,w.size(1),-1)
+        w = w.triu(1) - w.tril()
+        w = w.cumsum(2)
+        w = w - w.diagonal(dim1=1,dim2=2).unsqueeze(2)
+        ww = w.new_empty(w.size())
+        idx = M>=0
+        ww[idx] = w[idx] + M[idx].neg().exp().view(-1,1,1)
+        idx = ~idx
+        ww[idx] = M[idx].exp().view(-1,1,1)*w[idx] + 1
+        ww = (ww+1e-10).pow(-1)
+        ww = ww/ww.sum(1,True)
+        x = ww.transpose(1,2).bmm(x)
+       
         x = x.reshape(N*T, -1)
         x = self.fc3(x)
         x = x.reshape(N*T, -1)
+ 
+ 
+        #x = self.softmax(x)
+        # N, T = x.size(0), x.size(1)
+        # x = x.view(N*T, -1)
+        # x = self.fc_temp(x)
+        # x = x.view(N, -1)
+        # x = self.fc_temp2(x)
+
+        # dd : fctemp1, 2
+        # print('mean: {}, var: {}'.format(x.mean(), x.var()))
+
+        ### output model
+        # x = x.sigmoid()
+        # x = x.cumsum(1).sigmoid()
+        # x = x.cumsum(1)
+        ### output model
+
         return x
 
 def main():

@@ -1,7 +1,7 @@
 # video_place_recognition
 VTT 3rd year
 
-# place recognition software for Friends video based on scene change detector
+# Place recognition software for Friends video based on scene change detector
 This repository contains codes and pre-trained checkpoints of a place recognition model and scene change detector for Friend video.
 
 # Requirements
